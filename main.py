@@ -1,6 +1,10 @@
 import test
 import hyperparameters as hp
 import pygame
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
+from statistics import mean
 
 window = pygame.display.set_mode((hp.WIDTH, hp.HEIGHT))
 pygame.display.set_caption('Go Reader')
@@ -38,12 +42,90 @@ board_info = [
 
 hp.num_images = len(board_info)
 
-def main():
 
+def main():
+    # # import original image data
+    # image = cv2.imread('./images/1.jpg')
+
+    # # Resize image so it can be processed. Choose optimal dimensions such that important content is not lost
+    # image = cv2.resize(image, (760, 760))
+    # orig = image.copy()
+    
+    # plt.figure(0)
+    # plt.imshow(image)
+    # plt.show()
+
+    # # Step 1: Edge Detection
+
+    # # 1.1: Convert to grayscale
+    # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # plt.figure(1, figsize=(7,7))
+    # plt.imshow(gray, cmap='gray')
+
+    # # 1.2: Blurring for Smoothness: Options-> Gaussian Blur, Median Blur
+    # blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    # #blurred = cv2.medianBlur(gray, 5)
+    # plt.figure(2, figsize=(7,7))
+    # plt.imshow(blurred, cmap='gray')
+
+    # # 1.3: Applying Canny Edge Detection
+    # edged = cv2.Canny(blurred, 0, 50)
+    # plt.figure(3, figsize=(7,7))
+    # plt.imshow(edged, cmap='gray')
+
+    # plt.show()
+
+    # # Step 2: Finding largest contour in Edged Image
+
+    # # 2.1: Find Contours
+    # # (contours, _) = cv2.findContours(edged, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+    # (contours, _) = cv2.findContours(edged, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+
+    # # 2.2 Sort contours by area in decreasing order
+    # contours = sorted(contours, key=cv2.contourArea, reverse=True)
+
+    # # Plotting a bounding rectangle around largest contour for representational purposes
+    # x,y,w,h = cv2.boundingRect(contours[0])
+    # cv2.rectangle(image,(x,y),(x+w,y+h),(0,255,0),2)
+    # plt.figure(4, figsize=(7,7))
+    # plt.imshow(image, cmap='gray')
+    # plt.show()
+
+    # # 2.3 Get largest approximate contour with 4 vertices
+    # for c in contours:
+    #     p = cv2.arcLength(c, True)
+    #     approx = cv2.approxPolyDP(c, 0.02 * p, True)
+
+    #     if len(approx) == 4:
+    #         target = approx
+    #         break
+
+    # print('Largest approximate Contour is: ' + str(target))
+
+    # # Plotting the largest contour for representational purposes
+    # cv2.drawContours(image, [target], -1, (255, 0, 0), 2)
+    # plt.figure(5, figsize=(7,7))
+    # plt.imshow(image, cmap='gray')
+    # plt.show()
+
+    image = cv2.imread('./images/24.jpg')
+
+    # Resize image so it can be processed. Choose optimal dimensions such that important content is not lost
+    image = cv2.resize(image, (760, 760))
+    orig = image.copy()
+    # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # data = naive_stone_detection(image)
+    data = stone_detection_with_hough_circles(image)
+    
+
+
+    # store the expected output
     for i in range(hp.num_images):
         # print(i)
         expected.append(convert_board_info_to_array(board_info[i]))
 
+    # use pygame to visualize board
     run = True
 
     while run:
@@ -51,7 +133,7 @@ def main():
             if event.type == pygame.QUIT:
                 run = False
         
-        draw_board(expected[22])
+        draw_board(data)
 
         pygame.display.update()
     
@@ -123,5 +205,63 @@ def convert_board_info_to_array(data):
     
     return board
 
+
+def naive_stone_detection(image):
+    data = [[0 for i in range(19)] for j in range(19)]
+
+    for i in range(19):
+        for j in range(19):
+            data[i][j] = naive_stone_color(image, i, j)
+    
+    return data
+
+def naive_stone_color(image, i, j):
+    row1 = i * 40 + 10
+    col1 = j * 40 + 10
+    row2 = i * 40 + 15
+    col2 = j * 40 + 15
+    row3 = i * 40 + 25
+    col3 = j * 40 + 25
+    row4 = i * 40 + 30
+    col4 = j * 40 + 30
+    if mean(image[row1][col1]) < 50 or mean(image[row2][col2]) < 50 or mean(image[row3][col3]) < 50 or mean(image[row4][col4]) < 50:
+        # black
+        return 1
+    elif mean(image[row1][col1]) > 200 or mean(image[row2][col2]) > 200 or mean(image[row3][col3]) > 200 or mean(image[row4][col4]) > 200:
+        # white
+        return 2
+    return 0
+
+def stone_detection_with_hough_circles(image):
+    data = [[0 for i in range(19)] for j in range(19)]
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray = cv2.GaussianBlur(gray, (5, 5), 0)
+
+    circles = cv2.HoughCircles(
+        image=gray,
+        method=cv2.HOUGH_GRADIENT,
+        dp=1, minDist=10,
+        param1=100, param2=25,
+        minRadius=5, maxRadius=25
+    )[0]
+    circles = np.uint16(np.around(circles))
+
+    for circle in circles:
+        x, y, r = circle
+        data[y // 40][x // 40] = stone_color_with_circle(image, x, y, r)
+
+    return data
+
+# reference: https://stackoverflow.com/questions/43086715/rgb-average-of-circles
+def stone_color_with_circle(image, x, y, r):
+    circle_img = np.zeros((image.shape[0], image.shape[1]), np.uint8)
+    cv2.circle(circle_img,(x, y),r,(255,255,255),-1)
+    datos_rgb = cv2.mean(image, mask=circle_img)[::-1][1:]
+    
+    if mean(datos_rgb) < 100:
+        return 1
+    elif mean(datos_rgb) > 150:
+        return 2
+    return 0
 
 main()
