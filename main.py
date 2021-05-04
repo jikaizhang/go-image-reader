@@ -5,6 +5,7 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 from statistics import mean
+import time
 
 window = pygame.display.set_mode((hp.WIDTH, hp.HEIGHT))
 pygame.display.set_caption('Go Reader')
@@ -17,9 +18,6 @@ expected = []
 board_info = [
     "AW[ae][af][ag][ai][al][an][bd][be][bg][bi][bj][bm][bo][cj][cn][co][di][dl][dm][dn][ed][eh][ei][el][en][eo][ep][fi][fj][fk][fq][gf][gh][gi][gk][gn][go][gq][gr][gs][hc][hg][hh][hi][hj][ho][hq][ic][id][ie][ii][il][im][ip][iq][jb][jc][jf][jm][jn][jo][jp][kc][kf][kg][kh][ki][kj][km][ko][lc][lg][li][lk][ll][lm][lr][ls][mc][md][mg][mi][mk][mn][ms][na][nb][ne][nf][ni][nj][nl][nm][nn][no][np][nq][nr][ns][oc][of][oh][ok][op][pb][pc][pd][pf][ph][pi][pj][pk][pp][qc][qe][qf][qh][qj][ql][qp][qq][qr][rd][rj][rq][sd]AB[ah][ao][ap][bc][bf][bh][bp][cd][ce][cg][ch][ci][cp][dc][dd][dh][do][dp][dq][dr][ee][ef][eg][em][eq][es][fb][fc][fe][fg][fh][fl][fm][fn][fo][fr][fs][ga][gc][ge][gg][gl][ha][hb][hd][he][hf][hk][hl][hm][hn][hp][ia][ib][if][ig][ih][ij][ik][in][io][ir][is][ja][jg][jh][ji][jj][jl][jq][jr][kb][kk][kn][kp][kr][ks][la][lb][lh][ln][lo][lq][mb][mh][mo][mp][mq][mr][ng][nh][ob][og][ol][oo][pg][pl][pm][po][qg][qi][qk][qn][qo][re][rf][rg][rh][ri][rk][rl][rn][rp][rr][se][sg][sh][sj][sl][sp][sq][ss]",
     "AW[ac][af][aj][ak][bb][bd][be][bf][bg][bi][bj][bl][bm][br][bs][ca][cc][ce][cf][ck][cl][cm][co][cq][cr][da][db][dc][de][df][dn][do][dp][ea][ee][ef][eg][eh][ei][ej][eo][ep][eq][fe][ff][fl][fo][fp][gd][ge][gf][gk][gl][gm][gn][go][hc][hf][hg][hk][hn][hp][ic][ie][il][im][in][jc][je][jf][jm][jr][js][kb][kd][kg][ki][km][kn][ld][lg][lh][li][lj][lk][lm][ln][lr][ls][mc][md][me][mf][mj][mq][ms][nd][ng][nh][ni][nj][nk][nn][nq][nr][oc][od][oe][of][oj][oq][or][os][pd][pf][pg][pn][pq][pr][ps][qe][qf][qg][qh][qi][qj][ql][qn][qp][qq][qr][rf][rh][rk][rl][rm][rn][rp][sh][sm]AB[ag][ah][ai][am][ba][bh][bn][cd][cg][ch][ci][cj][cn][cs][dd][dg][dh][di][dj][dk][dl][dm][dq][dr][ds][eb][ec][ed][ek][el][em][en][er][es][fa][fb][fd][fg][fh][fi][fj][fk][fm][fn][fq][fs][ga][gc][gg][gj][gp][gq][gr][gs][hb][hd][he][hh][hi][hj][ho][ib][if][ig][ih][ij][ik][io][jb][jg][jh][ji][jk][jl][jn][jo][jq][kc][kf][kh][kj][kk][kl][ko][kp][kq][kr][ks][lb][lc][lf][ll][lo][lp][lq][mb][mi][mk][ml][mm][mn][mp][nb][nc][nf][nl][nm][np][ob][og][oh][oi][ok][on][oo][op][pc][ph][pi][pj][pk][pl][pm][po][pp][qb][qc][qd][qk][qm][qo][qs][rc][re][rg][ro][rq][rr][rs][sd][se][sf][sg][sn][so][sp]",
-    "AW[cd][ce][dc][dp][ed][fq][jd][kd][ld][md][nc][ob][pb][pc][qb]AB[cf][cn][de][df][dj][ke][le][me][nd][oc][od][pd][pl][po][qc][qf]",
-    "AB[cd][dj][dn][dp][ec][eq][fp][go][gp][hn][in][jd][jm][jo][kg][ko][kp][mn][ng][nh][np][nq][ob][oc][oe][og][op][pd][pe][pf][pl][po][qi][qj][qk][ql][qm][qo][rl][rn][rp]AW[fo][fq][gm][gn][gq][ho][hq][io][jp][jq][kq][ln][lp][mm][mo][nc][nd][ne][ni][od][oh][oi][on][oo][oq][or][pc][pg][pk][pm][pp][qc][qd][qe][qg][qp][qr][rk][rm][rq][sl]",
-    "AW[bn][bo][cg][cm][co][cq][dj][dp][ep][fq][oq][pf][pi][pq][qf][qn][qo][qp]AB[bp][bq][cd][cn][cp][do][dq][dr][ed][ic][jp][mp][nd][nq][oj][op][pd][po][qe]",
     "AB[bb][bd][bp][cc][ce][cf][cg][cn][co][db][de][dg][dj][do][eg][ek][en][ep][fb][fc][fd][ff][fp][fr][gf][gi][gj][gk][gl][gm][gn][gq][gs][hc][hd][he][hf][hh][hk][hn][hp][hr][ib][id][ij][iq][jb][jh][ji][jj][jp][jr][kb][kc][ki][kk][kn][ld][le][li][lk][lo][md][mf][mi][mk][ml][mm][mo][nc][nf][nj][no][np][ob][oc][of][oh][oi][oj][os][pb][pg][pk][pl][po][pp][pr][ps][qc][qd][qe][qg][qh][qj][qq][rf][rh][ri][rj][ro][rp][sg]AW[be][bm][bq][br][cd][ci][cj][cp][cr][dd][df][di][dl][dn][dp][dr][eb][ec][ee][ef][eq][er][fa][fe][fg][fh][fi][fj][fl][fq][gb][gc][gd][ge][gh][gp][hb][hi][hj][hm][ic][ie][ig][ih][ii][ik][im][io][jc][jd][je][jg][jk][jm][jo][kf][kh][kj][ko][kp][kq][kr][lb][lf][ll][lm][ln][mc][me][mg][mp][mr][nb][nd][ng][nh][nk][nq][ns][oe][og][ok][om][oq][or][pc][pd][pe][pf][pm][pn][qf][qk][ql][qn][qo][rk][rm][rn]",
     "AB[bb][bd][bp][cc][ce][cf][cg][cn][co][db][de][dg][dj][do][eg][ek][en][ep][fb][fc][fd][ff][fp][fr][gf][gi][gj][gk][gl][gm][gn][gq][gs][hc][hd][he][hf][hh][hk][hn][hp][hr][ib][id][ij][iq][jb][jh][ji][jj][jp][jr][kb][kc][ki][kk][kn][ld][le][li][lk][lo][md][mf][mi][mk][ml][mm][mo][nc][nf][nj][no][np][ob][oc][of][oh][oi][oj][os][pb][pg][pk][pl][po][pp][pr][ps][qc][qd][qe][qg][qh][qj][qq][rf][rh][ri][rj][ro][rp][sg]AW[be][bm][bq][br][cd][ci][cj][cp][cr][dd][df][di][dl][dn][dp][dr][eb][ec][ee][ef][eq][er][fa][fe][fg][fh][fi][fj][fl][fq][gb][gc][gd][ge][gh][gp][hb][hi][hj][hm][ic][ie][ig][ih][ii][ik][im][io][jc][jd][je][jg][jk][jm][jo][kf][kh][kj][ko][kp][kq][kr][lb][lf][ll][lm][ln][mc][me][mg][mp][mr][nb][nd][ng][nh][nk][nq][ns][oe][og][ok][om][oq][or][pc][pd][pe][pf][pm][pn][qf][qk][ql][qn][qo][rk][rm][rn]",
     "AB[ad][ai][aj][am][bb][bd][be][bj][bk][bl][bn][cc][cj][cl][cm][co][cp][cq][da][db][dc][dd][de][dh][di][dj][dm][dr][ea][ed][ee][ej][ek][el][eq][er][fd][fe][fg][fh][fj][fq][ge][gg][gh][gi][gk][gp][gr][hc][hd][he][hi][hk][hl][ho][hp][hq][hs][ia][ih][ii][ik][io][ip][iq][ir][is][ja][jb][jj][jk][jl][jr][kc][kf][kh][kj][kp][kr][lb][ld][le][lf][lh][li][ln][lo][lp][lq][ma][mc][mf][mg][mh][mi][mj][mk][mn][na][nb][nd][nf][nn][nq][oa][od][of][oh][oi][om][os][pe][pf][pg][ph][pi][pj][pm][po][pq][pr][ps][qe][qf][qh][qi][qm][qn][qo][qq][qs][rf][rl][rm][rp][rr][sm][so]AW[ae][af][ah][bf][bg][bi][cd][ce][cf][ch][ci][cn][df][dg][dn][do][dp][dq][eb][ec][ef][eg][eh][ei][em][eo][ep][fa][fc][ff][fi][fk][fl][fm][fo][fp][fr][gb][gc][gd][gf][gl][gm][go][ha][hb][hf][hg][hh][hm][hn][ib][ic][id][ie][ig][ij][il][im][in][jc][je][jf][jg][jh][ji][jm][jo][jp][jq][js][kd][ke][kg][ki][kk][kl][km][kn][ko][kq][ks][lg][lj][lk][lm][lr][ls][md][ml][mo][mp][mq][mr][ms][nc][ng][nh][ni][nj][nk][nl][nm][no][ns][ob][oc][og][oj][ol][on][oo][op][oq][or][pa][pb][pd][pk][pl][pn][pp][qb][qd][qg][qj][qk][ql][qp][rb][rc][re][rg][rh][ri][rk][ro][sd][sf][sk][sl]",
@@ -45,7 +43,7 @@ hp.num_images = len(board_info)
 
 def main():
     # # import original image data
-    # image = cv2.imread('./images/1.jpg')
+    # image = cv2.imread('./images/2.jpg')
 
     # # Resize image so it can be processed. Choose optimal dimensions such that important content is not lost
     # image = cv2.resize(image, (760, 760))
@@ -63,8 +61,9 @@ def main():
     # plt.imshow(gray, cmap='gray')
 
     # # 1.2: Blurring for Smoothness: Options-> Gaussian Blur, Median Blur
-    # blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-    # #blurred = cv2.medianBlur(gray, 5)
+    # # blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    # blurred = cv2.medianBlur(gray, 5)
+    # # blurred = cv2.bilateralFilter(gray,9,75,75)
     # plt.figure(2, figsize=(7,7))
     # plt.imshow(blurred, cmap='gray')
 
@@ -81,26 +80,43 @@ def main():
     # # (contours, _) = cv2.findContours(edged, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
     # (contours, _) = cv2.findContours(edged, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
 
-    # # 2.2 Sort contours by area in decreasing order
-    # contours = sorted(contours, key=cv2.contourArea, reverse=True)
+    # # # 2.2 Sort contours by area in decreasing order
+    # # contours = sorted(contours, key=cv2.contourArea, reverse=True)
 
-    # # Plotting a bounding rectangle around largest contour for representational purposes
-    # x,y,w,h = cv2.boundingRect(contours[0])
-    # cv2.rectangle(image,(x,y),(x+w,y+h),(0,255,0),2)
-    # plt.figure(4, figsize=(7,7))
-    # plt.imshow(image, cmap='gray')
-    # plt.show()
+    # # # Plotting a bounding rectangle around largest contour for representational purposes
+    # # x,y,w,h = cv2.boundingRect(contours[0])
+    # # cv2.rectangle(image,(x,y),(x+w,y+h),(0,255,0),2)
+    # # plt.figure(4, figsize=(7,7))
+    # # plt.imshow(image, cmap='gray')
+    # # plt.show()
+    # max_area = 0
+    # best_x, best_y, best_w, best_h = 0, 0, 0, 0
 
     # # 2.3 Get largest approximate contour with 4 vertices
     # for c in contours:
-    #     p = cv2.arcLength(c, True)
-    #     approx = cv2.approxPolyDP(c, 0.02 * p, True)
+    #     epsilon = 0.02 * cv2.arcLength(c, True)
+    #     approx = cv2.approxPolyDP(c, epsilon, True)
+    #     # cv2.drawContours(image, [approx], -1, (255, 0, 0), 2)
+    #     # plt.figure(6, figsize=(7,7))
+    #     # plt.imshow(image, cmap='gray')
+    #     # plt.show()
 
     #     if len(approx) == 4:
-    #         target = approx
-    #         break
+    #         x,y,w,h = cv2.boundingRect(c)
+    #         if cv2.contourArea(c) > max_area:
+    #             target = approx
+    #             max_area = cv2.contourArea(c)
+    #             best_x, best_y, best_w, best_h = x, y, w, h
+    #         # target = approx
+    #         # break
 
     # print('Largest approximate Contour is: ' + str(target))
+
+
+    # cv2.rectangle(image,(best_x,best_y),(best_x+best_w,best_y+best_h),(0,255,0),2)
+    # plt.figure(4, figsize=(7,7))
+    # plt.imshow(image, cmap='gray')
+    # plt.show()
 
     # # Plotting the largest contour for representational purposes
     # cv2.drawContours(image, [target], -1, (255, 0, 0), 2)
@@ -108,36 +124,75 @@ def main():
     # plt.imshow(image, cmap='gray')
     # plt.show()
 
-    image = cv2.imread('./images/24.jpg')
 
-    # Resize image so it can be processed. Choose optimal dimensions such that important content is not lost
-    image = cv2.resize(image, (760, 760))
-    orig = image.copy()
-    # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    # data = naive_stone_detection(image)
-    data = stone_detection_with_hough_circles(image)
+    # image = cv2.imread('./nice_images/3.jpg')
+
+    # # Resize image so it can be processed. Choose optimal dimensions such that important content is not lost
+    # image = cv2.resize(image, (760, 760))
+    # orig = image.copy()
+    # # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # # data = naive_stone_detection(image)
+    # data = stone_detection_with_hough_circles(image)
     
+    total_points = 0
+    correct_circles = 0
+    correct_points = 0
 
-
-    # store the expected output
+    # show the accuracy
     for i in range(hp.num_images):
-        # print(i)
-        expected.append(convert_board_info_to_array(board_info[i]))
+        expected_board = convert_board_info_to_array(board_info[i])
+        expected.append(expected_board)
+        image = cv2.imread('./nice_images/{}.jpg'.format(i + 1))
 
-    # use pygame to visualize board
-    run = True
+        curr_total_points = 0
+        curr_correct_circles = 0
+        curr_correct_points = 0
 
-    while run:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                run = False
+        # Resize image so it can be processed. Choose optimal dimensions such that important content is not lost
+        image = cv2.resize(image, (760, 760))
+
+        # reduce the effect of bright reflection on image
+        image = reduce_bright_reflection(image)
+        orig = image.copy()
+        # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        # real_board = naive_stone_detection(image)
+        real_board = stone_detection_with_hough_circles(image)
+
+        for j in range(19):
+            for k in range(19):
+                curr_total_points += 1
+                if (expected_board[j][k] == 0 and real_board[j][k] == 0) or (expected_board[j][k] != 0 and real_board[j][k] != 0):
+                    curr_correct_circles += 1
+                if expected_board[j][k] == real_board[j][k]:
+                    curr_correct_points += 1
+
+        print("Image #{}".format(i + 1))
+        print("Accuracy of detecting a stone or a none stone is: {}".format(curr_correct_circles / curr_total_points))
+        print("Accuracy of detecting a stone and its color or a none stone is: {}".format(curr_correct_points / curr_total_points))
+        print()
+        total_points += curr_total_points
+        correct_circles += curr_correct_circles
+        correct_points += curr_correct_points
+
+    print("Overall accuracy of detecting a stone or a none stone is: {}".format(correct_circles / total_points))
+    print("Overall accuracy of detecting a stone and its color or a none stone is: {}".format(correct_points / total_points))
+
+    # # use pygame to visualize board
+    # run = True
+
+    # while run:
+    #     for event in pygame.event.get():
+    #         if event.type == pygame.QUIT:
+    #             run = False
         
-        draw_board(data)
+    #     draw_board(data)
 
-        pygame.display.update()
+    #     pygame.display.update()
     
-    pygame.quit()
+    # pygame.quit()
 
 
 def draw_board(board):
@@ -240,28 +295,132 @@ def stone_detection_with_hough_circles(image):
     circles = cv2.HoughCircles(
         image=gray,
         method=cv2.HOUGH_GRADIENT,
-        dp=1, minDist=10,
+        dp=1, minDist=15,
         param1=100, param2=25,
-        minRadius=5, maxRadius=25
+        minRadius=2, maxRadius=45
     )[0]
     circles = np.uint16(np.around(circles))
 
+    # compute the average stone color, anything color than it would be
+    # considered black, else white
+    avg_stone_color = average_stone_color(image, circles)
+
     for circle in circles:
         x, y, r = circle
-        data[y // 40][x // 40] = stone_color_with_circle(image, x, y, r)
+        data[y // 40][x // 40] = stone_color_with_circle(image, x, y, r, avg_stone_color)
 
     return data
 
+def average_stone_color(image, circles):
+    color_sum = 0
+    for circle in circles:
+        x, y, r = circle
+        circle_img = np.zeros((image.shape[0], image.shape[1]), np.uint8)
+        cv2.circle(circle_img,(x, y),r,(255,255,255),-1)
+        datos_rgb = cv2.mean(image, mask=circle_img)[::-1][1:]
+        color_sum += mean(datos_rgb)
+    
+    return color_sum / len(circles)
+
 # reference: https://stackoverflow.com/questions/43086715/rgb-average-of-circles
-def stone_color_with_circle(image, x, y, r):
+def stone_color_with_circle(image, x, y, r, avg_stone_color):
     circle_img = np.zeros((image.shape[0], image.shape[1]), np.uint8)
     cv2.circle(circle_img,(x, y),r,(255,255,255),-1)
     datos_rgb = cv2.mean(image, mask=circle_img)[::-1][1:]
     
-    if mean(datos_rgb) < 100:
+    if mean(datos_rgb) < avg_stone_color:
         return 1
-    elif mean(datos_rgb) > 150:
-        return 2
-    return 0
+    return 2
+
+# reference: https://stackoverflow.com/questions/43470569/remove-glare-from-photo-opencv
+def reduce_bright_reflection(img):
+    clahefilter = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(16,16))
+
+
+    # while True:
+    t1 = time.time() 
+    img = img.copy()
+
+    ## crop if required 
+    #FACE
+    x,y,h,w = 550,250,400,300
+    # img = img[y:y+h, x:x+w]
+
+    #NORMAL
+    # convert to gray
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    grayimg = gray
+
+
+    GLARE_MIN = np.array([0, 0, 50],np.uint8)
+    GLARE_MAX = np.array([0, 0, 225],np.uint8)
+
+    hsv_img = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+
+    #HSV
+    frame_threshed = cv2.inRange(hsv_img, GLARE_MIN, GLARE_MAX)
+
+
+    #INPAINT
+    mask1 = cv2.threshold(grayimg , 220, 255, cv2.THRESH_BINARY)[1]
+    result1 = cv2.inpaint(img, mask1, 0.1, cv2.INPAINT_TELEA) 
+
+
+
+    #CLAHE
+    claheCorrecttedFrame = clahefilter.apply(grayimg)
+
+    #COLOR 
+    lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+    lab_planes = cv2.split(lab)
+    clahe = cv2.createCLAHE(clipLimit=2.0,tileGridSize=(8,8))
+    lab_planes[0] = clahe.apply(lab_planes[0])
+    lab = cv2.merge(lab_planes)
+    clahe_bgr = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+
+
+    #INPAINT + HSV
+    result = cv2.inpaint(img, frame_threshed, 0.1, cv2.INPAINT_TELEA) 
+
+
+    #INPAINT + CLAHE
+    grayimg1 = cv2.cvtColor(clahe_bgr, cv2.COLOR_BGR2GRAY)
+    mask2 = cv2.threshold(grayimg1 , 220, 255, cv2.THRESH_BINARY)[1]
+    result2 = cv2.inpaint(img, mask2, 0.1, cv2.INPAINT_TELEA) 
+
+
+
+    #HSV+ INPAINT + CLAHE
+    lab1 = cv2.cvtColor(result, cv2.COLOR_BGR2LAB)
+    lab_planes1 = cv2.split(lab1)
+    clahe1 = cv2.createCLAHE(clipLimit=2.0,tileGridSize=(8,8))
+    lab_planes1[0] = clahe1.apply(lab_planes1[0])
+    lab1 = cv2.merge(lab_planes1)
+    clahe_bgr1 = cv2.cvtColor(lab1, cv2.COLOR_LAB2BGR)
+
+    return clahe_bgr1
+
+
+    # fps = 1./(time.time()-t1)
+    # cv2.putText(clahe_bgr1    , "FPS: {:.2f}".format(fps), (10, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255))    
+
+#     # display it
+#     cv2.imshow("IMAGE", img)
+#     cv2.imshow("GRAY", gray)
+#     cv2.imshow("HSV", frame_threshed)
+#     cv2.imshow("CLAHE", clahe_bgr)
+#     cv2.imshow("LAB", lab)
+#     cv2.imshow("HSV + INPAINT", result)
+#     cv2.imshow("INPAINT", result1)
+#     cv2.imshow("CLAHE + INPAINT", result2)  
+#     cv2.imshow("HSV + INPAINT + CLAHE   ", clahe_bgr1)
+
+
+#     # Break with esc key
+#     if cv2.waitKey(1) & 0xFF == ord('q'): 
+#         break
+
+
+# cv2.destroyAllWindows()
 
 main()

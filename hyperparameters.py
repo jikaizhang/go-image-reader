@@ -1,4 +1,4 @@
-num_images = 24
+num_images = 20
 
 # for view
 WIDTH, HEIGHT = 800, 800
