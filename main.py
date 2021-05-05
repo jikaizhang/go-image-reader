@@ -6,6 +6,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from statistics import mean
 import time
+import tkinter as tk
+from tkinter import simpledialog
+import easygui
+
+
 
 window = pygame.display.set_mode((hp.WIDTH, hp.HEIGHT))
 pygame.display.set_caption('Go Reader')
@@ -44,15 +49,43 @@ num_clicks = 0
 board_corner_positions = [[0 for i in range(2)] for j in range(4)]
 
 def main():
+    # Some popups to understand user's preferences
+    root = tk.Tk()
+    root.withdraw()
+
+    mode = " "
+    image_path = " "
+    select_original_image = " "
+
+    while mode != "a" and mode != "b":
+        mode = simpledialog.askstring(title="Choose Mode",
+                prompt="(A) Upload your own image\n(B) Use our images")
+        mode = mode.lower()
+
+    # user upload
+    if mode == "a":
+        while image_path == " ":
+            image_path = simpledialog.askstring(title="Provide Image Path",
+                prompt="Please provide your image path:")
+    # our images
+    else:
+        while select_original_image != "a" and select_original_image != "b":
+            select_original_image = simpledialog.askstring(title="Choose Folder",
+                    prompt="(A) Use original images\n(B) Use preprocessed images")
+            select_original_image = select_original_image.lower()
+        if select_original_image == "a":
+            image_path = "./images"
+        else:
+            image_path = "./nice_images"
+
+
     def click_event(event, x, y, flags, params):
         global num_clicks
 
         # checking for left mouse clicks
         if event == cv2.EVENT_LBUTTONDOWN:
-    
-            # displaying the coordinates
-            # on the Shell
-            print(x, ' ', y)
+            cv2.circle(orig, (x, y), 10, (255, 0, 0), -1)
+            cv2.imshow('click to select the four corners of the board', orig)
 
             board_corner_positions[num_clicks][0] = x
             board_corner_positions[num_clicks][1] = y
@@ -63,231 +96,151 @@ def main():
                 num_clicks = 0
                 cv2.destroyAllWindows()
     
+    # user can only upload one image
+    if mode == "a":
+        num_images = 1
+    # or we go through all images in our folder
+    else:
+        num_images = hp.num_images
 
-    # # reference: https://stackoverflow.com/questions/42262198/4-point-persective-transform-failure
-    # image = cv2.imread('./images/2.jpg')
-    # image = cv2.resize(image, (hp.converted_image_size, hp.converted_image_size))
-    
-    # src_pts = np.array([[250, 10], [710, 60], [710, 710], [220, 680]], dtype=np.float32)
-
-    # width = get_euler_distance(src_pts[0], src_pts[1])
-    # height = get_euler_distance(src_pts[0], src_pts[3])
-
-    # dst_pts = np.array([[0, 0],   [width, 0],  [width, height], [0, height]], dtype=np.float32)
-
-    # M = cv2.getPerspectiveTransform(src_pts, dst_pts)
-    # warp = cv2.warpPerspective(image, M, (int(width), int(height)))
-
-    # plt.figure('warp', figsize=(7,7))
-    # plt.imshow(warp)
-    # plt.show()
-
-    # # import original image data
-    # image = cv2.imread('./images/2.jpg')
-
-    # # Resize image so it can be processed. Choose optimal dimensions such that important content is not lost
-    # image = cv2.resize(image, (hp.converted_image_size, hp.converted_image_size))
-    # orig = image.copy()
-    
-    # plt.figure(0)
-    # plt.imshow(image)
-    # plt.show()
-
-    # # Step 1: Edge Detection
-
-    # # 1.1: Convert to grayscale
-    # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    # plt.figure(1, figsize=(7,7))
-    # plt.imshow(gray, cmap='gray')
-
-    # # 1.2: Blurring for Smoothness: Options-> Gaussian Blur, Median Blur
-    # # blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-    # blurred = cv2.medianBlur(gray, 5)
-    # # blurred = cv2.bilateralFilter(gray,9,75,75)
-    # plt.figure(2, figsize=(7,7))
-    # plt.imshow(blurred, cmap='gray')
-
-    # # 1.3: Applying Canny Edge Detection
-    # edged = cv2.Canny(blurred, 0, 50)
-    # plt.figure(3, figsize=(7,7))
-    # plt.imshow(edged, cmap='gray')
-
-    # plt.show()
-
-    # # Step 2: Finding largest contour in Edged Image
-
-    # # 2.1: Find Contours
-    # # (contours, _) = cv2.findContours(edged, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
-    # (contours, _) = cv2.findContours(edged, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
-
-    # # # 2.2 Sort contours by area in decreasing order
-    # # contours = sorted(contours, key=cv2.contourArea, reverse=True)
-
-    # # # Plotting a bounding rectangle around largest contour for representational purposes
-    # # x,y,w,h = cv2.boundingRect(contours[0])
-    # # cv2.rectangle(image,(x,y),(x+w,y+h),(0,255,0),2)
-    # # plt.figure(4, figsize=(7,7))
-    # # plt.imshow(image, cmap='gray')
-    # # plt.show()
-    # max_area = 0
-    # best_x, best_y, best_w, best_h = 0, 0, 0, 0
-
-    # # 2.3 Get largest approximate contour with 4 vertices
-    # for c in contours:
-    #     epsilon = 0.02 * cv2.arcLength(c, True)
-    #     approx = cv2.approxPolyDP(c, epsilon, True)
-    #     # cv2.drawContours(image, [approx], -1, (255, 0, 0), 2)
-    #     # plt.figure(6, figsize=(7,7))
-    #     # plt.imshow(image, cmap='gray')
-    #     # plt.show()
-
-    #     if len(approx) == 4:
-    #         x,y,w,h = cv2.boundingRect(c)
-    #         if cv2.contourArea(c) > max_area:
-    #             target = approx
-    #             max_area = cv2.contourArea(c)
-    #             best_x, best_y, best_w, best_h = x, y, w, h
-    #         # target = approx
-    #         # break
-
-    # print('Largest approximate Contour is: ' + str(target))
-
-
-    # cv2.rectangle(image,(best_x,best_y),(best_x+best_w,best_y+best_h),(0,255,0),2)
-    # plt.figure(4, figsize=(7,7))
-    # plt.imshow(image, cmap='gray')
-    # plt.show()
-
-    # # Plotting the largest contour for representational purposes
-    # cv2.drawContours(image, [target], -1, (255, 0, 0), 2)
-    # plt.figure(5, figsize=(7,7))
-    # plt.imshow(image, cmap='gray')
-    # plt.show()
-
-
+    # total number of points on all boards
     total_points = 0
+    # number of stones we recognized correctly (regardless of colors)
     correct_circles = 0
+    # number of stones we labelled correctly (is it a stone? black or white?)
     correct_points = 0
 
     # show the accuracy
-    for i in range(hp.num_images):
+    for i in range(num_images):
+        # this is the expected output
         expected_board = convert_board_info_to_array(board_info[i])
         expected.append(expected_board)
-        image = cv2.imread('./images/{}.jpg'.format(i + 1))
 
+        if mode == "a":
+            image = cv2.imread(image_path)
+        else:
+            image = cv2.imread('{}/{}.jpg'.format(image_path, i + 1))
+
+        # total number of points on current board
         curr_total_points = 0
+        # number of stones we recognized correctly (regardless of colors)
         curr_correct_circles = 0
+        # number of stones we labelled correctly (is it a stone? black or white?)
         curr_correct_points = 0
 
         # Resize image so it can be processed. Choose optimal dimensions such that important content is not lost
         image = cv2.resize(image, (hp.converted_image_size, hp.converted_image_size))
 
+        copy = image.copy()
+
         # reduce the effect of bright reflection on image
         image = reduce_bright_reflection(image)
         orig = image.copy()
 
-        # ask the user to select the four corners of the board
-        cv2.imshow('click to select the four corners of the board', orig)
-    
-        # setting mouse handler for the image
-        # and calling the click_event() function
-        cv2.setMouseCallback('click to select the four corners of the board', click_event)
-    
-        # wait for a key to be pressed to exit
-        cv2.waitKey(0)
-    
-        # close the window
-        cv2.destroyAllWindows()
+        # we need to ask the user to select the four corners
+        # and crop the board
+        if mode == "a" or select_original_image == "a":
+            easygui.msgbox("Please click on the four corners of the board on the following image!", title="Alert")
 
-        # reference: https://stackoverflow.com/questions/42262198/4-point-persective-transform-failure
-        # now we got the four corners, let's crop the board
-        src_pts = np.array(rearrage_points_clockwise(board_corner_positions), dtype=np.float32)
+            # ask the user to select the four corners of the board
+            cv2.imshow('click to select the four corners of the board', orig)
 
-        width = get_euler_distance(src_pts[0], src_pts[1])
-        height = get_euler_distance(src_pts[0], src_pts[3])
+            # setting mouse handler for the image
+            # and calling the click_event() function
+            cv2.setMouseCallback('click to select the four corners of the board', click_event)
+        
+            # wait for a key to be pressed to exit
+            cv2.waitKey(0)
 
-        dst_pts = np.array([[0, 0], [width, 0], [width, height], [0, height]], dtype=np.float32)
+            # close the window
+            cv2.destroyAllWindows()
 
-        M = cv2.getPerspectiveTransform(src_pts, dst_pts)
-        warp = cv2.warpPerspective(image, M, (int(width), int(height)))
+            # reference: https://stackoverflow.com/questions/42262198/4-point-persective-transform-failure
+            # now we got the four corners, let's crop the board
 
-        plt.figure('warp', figsize=(7,7))
-        plt.imshow(warp)
-        plt.show()
+            # rearrage the user clicked 4 corners in clockwise order
+            src_pts = np.array(rearrage_points_clockwise(board_corner_positions), dtype=np.float32)
+            width = get_euler_distance(src_pts[0], src_pts[1])
+            height = get_euler_distance(src_pts[0], src_pts[3])
 
-        image = cv2.resize(warp, (hp.converted_image_size, hp.converted_image_size))
+            dst_pts = np.array([[0, 0], [width, 0], [width, height], [0, height]], dtype=np.float32)
+
+            # transform the cropped board to a flat image
+            M = cv2.getPerspectiveTransform(src_pts, dst_pts)
+            warp = cv2.warpPerspective(image, M, (int(width), int(height)))
+
+            plt.figure('warp', figsize=(7,7))
+            plt.imshow(warp)
+            plt.show()
+
+            image = cv2.resize(warp, (hp.converted_image_size, hp.converted_image_size))
 
         # real_board = naive_stone_detection(image)
         real_board = stone_detection_with_hough_circles(image)
 
-        for j in range(19):
-            for k in range(19):
-                curr_total_points += 1
-                if (expected_board[j][k] == 0 and real_board[j][k] == 0) or (expected_board[j][k] != 0 and real_board[j][k] != 0):
-                    curr_correct_circles += 1
-                if expected_board[j][k] == real_board[j][k]:
-                    curr_correct_points += 1
+        # if the user choose to use our images, show (s)he the accuracy
+        if mode == "b":
+            for j in range(19):
+                for k in range(19):
+                    curr_total_points += 1
+                    if (expected_board[j][k] == 0 and real_board[j][k] == 0) or (expected_board[j][k] != 0 and real_board[j][k] != 0):
+                        curr_correct_circles += 1
+                    if expected_board[j][k] == real_board[j][k]:
+                        curr_correct_points += 1
 
-        print("Image #{}".format(i + 1))
-        print("Accuracy of detecting a stone or a none stone is: {}".format(curr_correct_circles / curr_total_points))
-        print("Accuracy of detecting a stone and its color or a none stone is: {}".format(curr_correct_points / curr_total_points))
-        print()
-        total_points += curr_total_points
-        correct_circles += curr_correct_circles
-        correct_points += curr_correct_points
+            print("Image #{}".format(i + 1))
+            print("Accuracy of detecting a stone or a none stone is: {}".format(curr_correct_circles / curr_total_points))
+            print("Accuracy of detecting a stone and its color or a none stone is: {}".format(curr_correct_points / curr_total_points))
+            print()
+            total_points += curr_total_points
+            correct_circles += curr_correct_circles
+            correct_points += curr_correct_points
 
-        # use pygame to visualize board
-        run = True
+        if mode == "a":
+            # use pygame to visualize board
+            run = True
 
-        while run:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    run = False
+            while run:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        run = False
+                
+                # visualize the model's labels in a customized GUI
+                draw_board(real_board)
+
+                pygame.display.update()
             
-            draw_board(real_board)
+            # Show the original image
+            plt.figure('original image', figsize=(7,7))
+            plt.imshow(copy)
+            plt.show()
 
-            pygame.display.update()
-        
-        plt.figure('original image', figsize=(7,7))
-        plt.imshow(orig)
-        plt.show()
+            pygame.quit()
 
-        pygame.quit()
-
-    print("Overall accuracy of detecting a stone or a none stone is: {}".format(correct_circles / total_points))
-    print("Overall accuracy of detecting a stone and its color or a none stone is: {}".format(correct_points / total_points))
-
-    # # use pygame to visualize board
-    # run = True
-
-    # while run:
-    #     for event in pygame.event.get():
-    #         if event.type == pygame.QUIT:
-    #             run = False
-        
-    #     draw_board(data)
-
-    #     pygame.display.update()
-    
-    # pygame.quit()
+    if mode == "b":
+        print("Overall accuracy of detecting a stone or a none stone is: {}".format(correct_circles / total_points))
+        print("Overall accuracy of detecting a stone and its color or a none stone is: {}".format(correct_points / total_points))
 
 
+# visualize the 2d board array with my customized GUI
 def draw_board(board):
     window.fill(hp.GREY)
     for row in range(hp.ROW + 1):
         for col in range(hp.COL + 1):
+            # draw a grid
             if row != hp.ROW and col != hp.COL:
                 pygame.draw.rect(
                     window, 
                     hp.BACKGROUND_COLOR, 
-                    (
+                    (   
+                        # hp.GRID_SIZE + 1 so we have 1px lines in the board
                         (row + 1) * (hp.GRID_SIZE + 1), 
                         (col + 1) * (hp.GRID_SIZE + 1),
                         hp.GRID_SIZE,
                         hp.GRID_SIZE
                     )
                 )
-            ## black
+            ## black stone
             if board[col][row] == 1:
                 pygame.draw.circle(
                 window, 
@@ -299,7 +252,7 @@ def draw_board(board):
                 hp.STONE_SIZE
             )
 
-            ## white
+            ## white stone
             if board[col][row] == 2:
                 pygame.draw.circle(
                 window, 
@@ -311,6 +264,8 @@ def draw_board(board):
                 hp.STONE_SIZE
             )
 
+
+# convert the sgf info and return the converted info
 def convert_board_info_to_array(data):
     # initialize with zeroes
     board = [[0 for i in range(19)] for j in range(19)]
@@ -326,18 +281,18 @@ def convert_board_info_to_array(data):
     for i in range(len(white_substring) // 4):
         row = ord(white_substring[i * 4 + 2]) - ord('a')
         col = ord(white_substring[i * 4 + 1]) - ord('a')
-        # print("white: " + white_substring[i * 4 + 2] + white_substring[i * 4 + 1] + str(row) + ", " + str(col))
         board[row][col] = 2
 
     for i in range(len(black_substring) // 4):
         row = ord(black_substring[i * 4 + 2]) - ord('a')
         col = ord(black_substring[i * 4 + 1]) - ord('a')
-        # print("black: " + black_substring[i * 4 + 2] + black_substring[i * 4 + 1] + str(row) + ", " + str(col))
         board[row][col] = 1
     
     return board
 
 
+# a naive implementation of stone detection, where we simply
+# classify the color in a given grid
 def naive_stone_detection(image):
     data = [[0 for i in range(19)] for j in range(19)]
 
@@ -347,6 +302,10 @@ def naive_stone_detection(image):
     
     return data
 
+
+# a naive way to determine the stone color: pick four points, and
+# check if there is a point that's very bright (white) or very
+# dark (black), otherwise classify it as empty space
 def naive_stone_color(image, i, j):
     row1 = int((i + 0.25) * hp.converted_grid_size)
     col1 = int((j + 0.25) * hp.converted_grid_size)
@@ -364,6 +323,9 @@ def naive_stone_color(image, i, j):
         return 2
     return 0
 
+
+# using openCV's HoughCircles library to find all stones (circles)
+# and then determine the stone color
 def stone_detection_with_hough_circles(image):
     data = [[0 for i in range(19)] for j in range(19)]
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -378,8 +340,8 @@ def stone_detection_with_hough_circles(image):
     )[0]
     circles = np.uint16(np.around(circles))
 
-    # compute the average stone color, anything color than it would be
-    # considered black, else white
+    # compute the average stone color, anything color darker than it 
+    # would be considered black, else white
     avg_stone_color = average_stone_color(image, circles)
 
     for circle in circles:
@@ -388,6 +350,9 @@ def stone_detection_with_hough_circles(image):
 
     return data
 
+
+# compute the average pixel of all stones in the board, 
+# anything color darker than it would be considered black, else white
 def average_stone_color(image, circles):
     color_sum = 0
     for circle in circles:
@@ -399,6 +364,9 @@ def average_stone_color(image, circles):
     
     return color_sum / len(circles)
 
+
+# determine the color of the stone by comparing it with the 
+# average pixels of all stones on the board
 # reference: https://stackoverflow.com/questions/43086715/rgb-average-of-circles
 def stone_color_with_circle(image, x, y, r, avg_stone_color):
     circle_img = np.zeros((image.shape[0], image.shape[1]), np.uint8)
@@ -409,45 +377,37 @@ def stone_color_with_circle(image, x, y, r, avg_stone_color):
         return 1
     return 2
 
+
+# because the model did not perform well when there is strong light spot
+# on the board, I try to reduce that influence
 # reference: https://stackoverflow.com/questions/43470569/remove-glare-from-photo-opencv
 def reduce_bright_reflection(img):
     clahefilter = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(16,16))
 
-
-    # while True:
     t1 = time.time() 
     img = img.copy()
 
-    ## crop if required 
-    #FACE
-    x,y,h,w = 550,250,400,300
-    # img = img[y:y+h, x:x+w]
-
-    #NORMAL
+    # NORMAL
     # convert to gray
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     grayimg = gray
-
 
     GLARE_MIN = np.array([0, 0, 50],np.uint8)
     GLARE_MAX = np.array([0, 0, 225],np.uint8)
 
     hsv_img = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
 
-    #HSV
+    # HSV
     frame_threshed = cv2.inRange(hsv_img, GLARE_MIN, GLARE_MAX)
 
-
-    #INPAINT
+    # INPAINT
     mask1 = cv2.threshold(grayimg , 220, 255, cv2.THRESH_BINARY)[1]
     result1 = cv2.inpaint(img, mask1, 0.1, cv2.INPAINT_TELEA) 
 
-
-
-    #CLAHE
+    # CLAHE
     claheCorrecttedFrame = clahefilter.apply(grayimg)
 
-    #COLOR 
+    # COLOR 
     lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
     lab_planes = cv2.split(lab)
     clahe = cv2.createCLAHE(clipLimit=2.0,tileGridSize=(8,8))
@@ -455,19 +415,15 @@ def reduce_bright_reflection(img):
     lab = cv2.merge(lab_planes)
     clahe_bgr = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
 
-
-    #INPAINT + HSV
+    # INPAINT + HSV
     result = cv2.inpaint(img, frame_threshed, 0.1, cv2.INPAINT_TELEA) 
 
-
-    #INPAINT + CLAHE
+    # INPAINT + CLAHE
     grayimg1 = cv2.cvtColor(clahe_bgr, cv2.COLOR_BGR2GRAY)
     mask2 = cv2.threshold(grayimg1 , 220, 255, cv2.THRESH_BINARY)[1]
     result2 = cv2.inpaint(img, mask2, 0.1, cv2.INPAINT_TELEA) 
 
-
-
-    #HSV+ INPAINT + CLAHE
+    # HSV + INPAINT + CLAHE
     lab1 = cv2.cvtColor(result, cv2.COLOR_BGR2LAB)
     lab_planes1 = cv2.split(lab1)
     clahe1 = cv2.createCLAHE(clipLimit=2.0,tileGridSize=(8,8))
@@ -478,29 +434,8 @@ def reduce_bright_reflection(img):
     return clahe_bgr1
 
 
-    # fps = 1./(time.time()-t1)
-    # cv2.putText(clahe_bgr1    , "FPS: {:.2f}".format(fps), (10, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255))    
-
-#     # display it
-#     cv2.imshow("IMAGE", img)
-#     cv2.imshow("GRAY", gray)
-#     cv2.imshow("HSV", frame_threshed)
-#     cv2.imshow("CLAHE", clahe_bgr)
-#     cv2.imshow("LAB", lab)
-#     cv2.imshow("HSV + INPAINT", result)
-#     cv2.imshow("INPAINT", result1)
-#     cv2.imshow("CLAHE + INPAINT", result2)  
-#     cv2.imshow("HSV + INPAINT + CLAHE   ", clahe_bgr1)
-
-
-#     # Break with esc key
-#     if cv2.waitKey(1) & 0xFF == ord('q'): 
-#         break
-
-
-# cv2.destroyAllWindows()
-
-
+# get the euler distance between two points, used to get the cropped
+# area on an image given the four corners
 def get_euler_distance(pt1, pt2):
     return ((pt1[0] - pt2[0])**2 + (pt1[1] - pt2[1])**2)**0.5
 
@@ -512,6 +447,11 @@ def rearrage_points_clockwise(positions):
 
     res = [[0 for i in range(len(positions[0]))] for j in range(len(positions))]
 
+    # the order is:
+        # 0 = top-left
+        # 1 = top-right
+        # 2 = bottom-right
+        # 3 = bottom-left
     for point in positions:
         if point[0] < mean_x and point[1] < mean_y:
             res[0] = point
@@ -523,5 +463,6 @@ def rearrage_points_clockwise(positions):
             res[3] = point
     
     return res
+
 
 main()
