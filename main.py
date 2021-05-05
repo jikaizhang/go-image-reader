@@ -40,13 +40,53 @@ board_info = [
 
 hp.num_images = len(board_info)
 
+num_clicks = 0
+board_corner_positions = [[0 for i in range(2)] for j in range(4)]
 
 def main():
+    def click_event(event, x, y, flags, params):
+        global num_clicks
+
+        # checking for left mouse clicks
+        if event == cv2.EVENT_LBUTTONDOWN:
+    
+            # displaying the coordinates
+            # on the Shell
+            print(x, ' ', y)
+
+            board_corner_positions[num_clicks][0] = x
+            board_corner_positions[num_clicks][1] = y
+
+            num_clicks += 1
+
+            if num_clicks == 4:
+                num_clicks = 0
+                cv2.destroyAllWindows()
+    
+
+    # # reference: https://stackoverflow.com/questions/42262198/4-point-persective-transform-failure
+    # image = cv2.imread('./images/2.jpg')
+    # image = cv2.resize(image, (hp.converted_image_size, hp.converted_image_size))
+    
+    # src_pts = np.array([[250, 10], [710, 60], [710, 710], [220, 680]], dtype=np.float32)
+
+    # width = get_euler_distance(src_pts[0], src_pts[1])
+    # height = get_euler_distance(src_pts[0], src_pts[3])
+
+    # dst_pts = np.array([[0, 0],   [width, 0],  [width, height], [0, height]], dtype=np.float32)
+
+    # M = cv2.getPerspectiveTransform(src_pts, dst_pts)
+    # warp = cv2.warpPerspective(image, M, (int(width), int(height)))
+
+    # plt.figure('warp', figsize=(7,7))
+    # plt.imshow(warp)
+    # plt.show()
+
     # # import original image data
     # image = cv2.imread('./images/2.jpg')
 
     # # Resize image so it can be processed. Choose optimal dimensions such that important content is not lost
-    # image = cv2.resize(image, (760, 760))
+    # image = cv2.resize(image, (hp.converted_image_size, hp.converted_image_size))
     # orig = image.copy()
     
     # plt.figure(0)
@@ -125,17 +165,6 @@ def main():
     # plt.show()
 
 
-
-    # image = cv2.imread('./nice_images/3.jpg')
-
-    # # Resize image so it can be processed. Choose optimal dimensions such that important content is not lost
-    # image = cv2.resize(image, (760, 760))
-    # orig = image.copy()
-    # # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-    # # data = naive_stone_detection(image)
-    # data = stone_detection_with_hough_circles(image)
-    
     total_points = 0
     correct_circles = 0
     correct_points = 0
@@ -144,19 +173,49 @@ def main():
     for i in range(hp.num_images):
         expected_board = convert_board_info_to_array(board_info[i])
         expected.append(expected_board)
-        image = cv2.imread('./nice_images/{}.jpg'.format(i + 1))
+        image = cv2.imread('./images/{}.jpg'.format(i + 1))
 
         curr_total_points = 0
         curr_correct_circles = 0
         curr_correct_points = 0
 
         # Resize image so it can be processed. Choose optimal dimensions such that important content is not lost
-        image = cv2.resize(image, (760, 760))
+        image = cv2.resize(image, (hp.converted_image_size, hp.converted_image_size))
 
         # reduce the effect of bright reflection on image
         image = reduce_bright_reflection(image)
         orig = image.copy()
-        # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        # ask the user to select the four corners of the board
+        cv2.imshow('click to select the four corners of the board', orig)
+    
+        # setting mouse handler for the image
+        # and calling the click_event() function
+        cv2.setMouseCallback('click to select the four corners of the board', click_event)
+    
+        # wait for a key to be pressed to exit
+        cv2.waitKey(0)
+    
+        # close the window
+        cv2.destroyAllWindows()
+
+        # reference: https://stackoverflow.com/questions/42262198/4-point-persective-transform-failure
+        # now we got the four corners, let's crop the board
+        src_pts = np.array(rearrage_points_clockwise(board_corner_positions), dtype=np.float32)
+
+        width = get_euler_distance(src_pts[0], src_pts[1])
+        height = get_euler_distance(src_pts[0], src_pts[3])
+
+        dst_pts = np.array([[0, 0], [width, 0], [width, height], [0, height]], dtype=np.float32)
+
+        M = cv2.getPerspectiveTransform(src_pts, dst_pts)
+        warp = cv2.warpPerspective(image, M, (int(width), int(height)))
+
+        plt.figure('warp', figsize=(7,7))
+        plt.imshow(warp)
+        plt.show()
+
+        image = cv2.resize(warp, (hp.converted_image_size, hp.converted_image_size))
 
         # real_board = naive_stone_detection(image)
         real_board = stone_detection_with_hough_circles(image)
@@ -176,6 +235,24 @@ def main():
         total_points += curr_total_points
         correct_circles += curr_correct_circles
         correct_points += curr_correct_points
+
+        # use pygame to visualize board
+        run = True
+
+        while run:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    run = False
+            
+            draw_board(real_board)
+
+            pygame.display.update()
+        
+        plt.figure('original image', figsize=(7,7))
+        plt.imshow(orig)
+        plt.show()
+
+        pygame.quit()
 
     print("Overall accuracy of detecting a stone or a none stone is: {}".format(correct_circles / total_points))
     print("Overall accuracy of detecting a stone and its color or a none stone is: {}".format(correct_points / total_points))
@@ -271,14 +348,14 @@ def naive_stone_detection(image):
     return data
 
 def naive_stone_color(image, i, j):
-    row1 = i * 40 + 10
-    col1 = j * 40 + 10
-    row2 = i * 40 + 15
-    col2 = j * 40 + 15
-    row3 = i * 40 + 25
-    col3 = j * 40 + 25
-    row4 = i * 40 + 30
-    col4 = j * 40 + 30
+    row1 = int((i + 0.25) * hp.converted_grid_size)
+    col1 = int((j + 0.25) * hp.converted_grid_size)
+    row2 = int((i + 0.375) * hp.converted_grid_size)
+    col2 = int((j + 0.375) * hp.converted_grid_size)
+    row3 = int((i + 0.625) * hp.converted_grid_size)
+    col3 = int((j + 0.625) * hp.converted_grid_size)
+    row4 = int((i + 0.75) * hp.converted_grid_size)
+    col4 = int((j + 0.75) * hp.converted_grid_size)
     if mean(image[row1][col1]) < 50 or mean(image[row2][col2]) < 50 or mean(image[row3][col3]) < 50 or mean(image[row4][col4]) < 50:
         # black
         return 1
@@ -307,7 +384,7 @@ def stone_detection_with_hough_circles(image):
 
     for circle in circles:
         x, y, r = circle
-        data[y // 40][x // 40] = stone_color_with_circle(image, x, y, r, avg_stone_color)
+        data[y // hp.converted_grid_size][x // hp.converted_grid_size] = stone_color_with_circle(image, x, y, r, avg_stone_color)
 
     return data
 
@@ -422,5 +499,29 @@ def reduce_bright_reflection(img):
 
 
 # cv2.destroyAllWindows()
+
+
+def get_euler_distance(pt1, pt2):
+    return ((pt1[0] - pt2[0])**2 + (pt1[1] - pt2[1])**2)**0.5
+
+
+# return the clockwise order of a list of points
+def rearrage_points_clockwise(positions):
+    mean_x = mean([row[0] for row in positions])
+    mean_y = mean([row[1] for row in positions])
+
+    res = [[0 for i in range(len(positions[0]))] for j in range(len(positions))]
+
+    for point in positions:
+        if point[0] < mean_x and point[1] < mean_y:
+            res[0] = point
+        elif point[0] > mean_x and point[1] < mean_y:
+            res[1] = point
+        elif point[0] > mean_x and point[1] > mean_y:
+            res[2] = point
+        else:
+            res[3] = point
+    
+    return res
 
 main()

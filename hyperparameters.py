@@ -1,4 +1,6 @@
 num_images = 20
+converted_image_size = 760
+converted_grid_size = converted_image_size // 19
 
 # for view
 WIDTH, HEIGHT = 800, 800
