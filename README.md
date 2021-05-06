@@ -14,6 +14,7 @@
 11. With the above approach, the model reached 95% accuracy in stone existence classification, and 94.4% in classifying both the existence and the color.
 12. I try to find the similarities amoung the images with low test accuracy, and I figured out the effect of light on the accuracy. My model tends to perform bad when there is bright spots or reflections on the board. The image below is an example of the bright glares:
 <img src="https://github.com/jikaizhang/go-image-reader/blob/main/images/11.JPG">
+
 13. So I used CLAHE (Contrast Limited Adaptive Histogram Equalization) to reduce some bright reflections, then the accuracies increased to 96.2% and 95.5%, respectively.
 14. Finally, I added some popups to be more user friendly. I give the users options of uploading his/her own board image, or use the images I provided.
 
