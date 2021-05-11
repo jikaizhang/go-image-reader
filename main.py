@@ -1,11 +1,9 @@
-import test
 import hyperparameters as hp
 import pygame
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 from statistics import mean
-import time
 import tkinter as tk
 from tkinter import simpledialog
 import easygui
@@ -339,15 +337,17 @@ def stone_detection_with_hough_circles(image):
         minRadius=2, maxRadius=45
     )[0]
     circles = np.uint16(np.around(circles))
-
+    
     # compute the average stone color, anything color darker than it 
     # would be considered black, else white
     avg_stone_color = average_stone_color(image, circles)
 
     for circle in circles:
         x, y, r = circle
-        data[y // hp.converted_grid_size][x // hp.converted_grid_size] = stone_color_with_circle(image, x, y, r, avg_stone_color)
-
+        # use a smaller radius to reduce the effect of glare on stones
+        # or irregular circles
+        data[y // hp.converted_grid_size][x // hp.converted_grid_size] = stone_color_with_circle(image, x, y, int(r * 0.4), avg_stone_color)
+        
     return data
 
 
@@ -370,7 +370,7 @@ def average_stone_color(image, circles):
 # reference: https://stackoverflow.com/questions/43086715/rgb-average-of-circles
 def stone_color_with_circle(image, x, y, r, avg_stone_color):
     circle_img = np.zeros((image.shape[0], image.shape[1]), np.uint8)
-    cv2.circle(circle_img,(x, y),r,(255,255,255),-1)
+    cv2.circle(circle_img,(x, y), r, (255, 255, 255), -1)
     datos_rgb = cv2.mean(image, mask=circle_img)[::-1][1:]
     
     if mean(datos_rgb) < avg_stone_color:
@@ -383,9 +383,6 @@ def stone_color_with_circle(image, x, y, r, avg_stone_color):
 # reference: https://stackoverflow.com/questions/43470569/remove-glare-from-photo-opencv
 def reduce_bright_reflection(img):
     clahefilter = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(16,16))
-
-    t1 = time.time() 
-    img = img.copy()
 
     # NORMAL
     # convert to gray
@@ -430,6 +427,8 @@ def reduce_bright_reflection(img):
     lab_planes1[0] = clahe1.apply(lab_planes1[0])
     lab1 = cv2.merge(lab_planes1)
     clahe_bgr1 = cv2.cvtColor(lab1, cv2.COLOR_LAB2BGR)
+
+    cv2.imshow("HSV + INPAINT + CLAHE   ", clahe_bgr1)
 
     return clahe_bgr1
 
